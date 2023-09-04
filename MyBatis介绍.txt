@@ -1,0 +1,46 @@
+Hibernate
+	Hibernate.cfg.xml
+	表关系映射文件
+	
+	实体与数据库表的字段完全的一对一映射，达到操作实体等于操作数据库表
+	
+	ORM框架，对象关系映射框架
+	
+	简化SQL操作
+	JDBC
+	创建链接，con
+	创建发送sql语句对象，pst
+	编写sql语句
+	执行sql语句
+	
+	完全的对JDBC进行了封装
+		优点：简化代码的编写
+		缺点：性能低、学习成本、复杂SQL操作
+		
+	SQL语句强调，全部由我自己控制
+	
+MyBatis
+	MyBatis.xml
+	SQL语句文件.xml（daoImp）
+	不做表对应对象的一对一映射
+	半ORM框架
+	JDBC
+	创建链接，con
+	创建发送sql语句对象，pst
+	--编写sql语句（没有完成封装）
+	执行sql语句
+	
+	SQL语句强调，放到配置文件中来进行控制
+	
+	.java文件编译程class中，打war包经过编译，xml覆盖使用  web.xml
+	
+半封装
+	相比于Hibernate更加灵活
+	相比于Hibernate学习成本更低
+	相比于Hibernate性能更加高
+	
+复杂SQL，学习成本（框架模式，反向框架）
+90%，Hibernate10%（老项目）SSH框架整合
+
+SSM新的项目，搭建
+
