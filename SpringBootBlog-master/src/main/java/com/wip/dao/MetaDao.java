@@ -27,12 +27,14 @@ public interface MetaDao {
      */
     int addMeta(MetaDomain meta);
 
+
     /**
      * 更新项目
      * @param meta  项目对象
      * @return
      */
     int updateMeta(MetaDomain meta);
+
 
     /**
      * 根据条件查询

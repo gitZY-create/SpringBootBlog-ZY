@@ -6,9 +6,19 @@
         t_relationships
     </sql>
 
+    <!--表名-->
+    <sql id="BASE_TABLE_TUTO">
+        t_relationships_tuto
+    </sql>
+
     <!--基本列-->
     <sql id="BASE_COLUMN">
         rs.cid, rs.mid
+    </sql>
+
+    <!--基本列-->
+    <sql id="BASE_COLUMN_TUTO">
+        rs1.tid, rs1.mid
     </sql>
 
     <!--根据meta编号获取对应的标签或则分类-->
@@ -21,7 +31,15 @@
           mid = #{mid, jdbcType=INTEGER}
     </select>
 
-
+    <!--根据meta编号获取对应的标签或则分类-->
+    <select id="getRelationShipByMidTuto" resultType="com.wip.model.RelationShipDomain">
+        SELECT
+        <include refid="BASE_COLUMN_TUTO"/>
+        FROM
+        <include refid="BASE_TABLE_TUTO"/> AS rs1
+        WHERE
+        mid = #{mid, jdbcType=INTEGER}
+    </select>
 
     <!--删除meta的所有记录-->
     <delete id="deleteRelationShipByMid">
@@ -31,12 +49,28 @@
           mid = #{mid, jdbcType=INTEGER}
     </delete>
 
+    <!--删除meta的所有记录-->
+    <delete id="deleteRelationShipByMidTuto">
+        DELETE FROM
+        <include refid="BASE_TABLE_TUTO"/>
+        WHERE
+        mid = #{mid, jdbcType=INTEGER}
+    </delete>
+
     <delete id="deleteRelationShipByCid">
         DELETE FROM
           <include refid="BASE_TABLE"/>
         WHERE
           cid = #{cid, jdbcType=INTEGER}
     </delete>
+
+    <delete id="deleteRelationShipByTid">
+        DELETE FROM
+        <include refid="BASE_TABLE_TUTO"/>
+        WHERE
+        tid = #{tid, jdbcType=INTEGER}
+    </delete>
+
 
     <!--查找数量-->
     <select id="getCountById" resultType="java.lang.Long">
@@ -48,6 +82,18 @@
           cid = #{cid, jdbcType=INTEGER}
         AND
           mid = #{mid, jdbcType=INTEGER}
+    </select>
+
+    <!--查找数量-->
+    <select id="getCountByIdTuto" resultType="java.lang.Long">
+        SELECT
+        COUNT(*)
+        FROM
+        <include refid="BASE_TABLE_TUTO"/>
+        WHERE
+        tid = #{tid, jdbcType=INTEGER}
+        AND
+        mid = #{mid, jdbcType=INTEGER}
     </select>
 
     <!--添加-->
@@ -63,6 +109,19 @@
         </trim>
     </insert>
 
+    <!--添加-->
+    <insert id="addRelationShipTuto" parameterType="com.wip.model.RelationShipDomain">
+        INSERT INTO
+        <include refid="BASE_TABLE_TUTO"/>
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            tid, mid,
+        </trim>
+        <trim prefix="VALUES(" suffix=")" suffixOverrides=",">
+            #{cid, jdbcType=INTEGER},
+            #{mid, jdbcType=INTEGER}
+        </trim>
+    </insert>
+
     <!--根据文章ID获取对应的标签或分类-->
     <select id="getRelationShipByCid" resultType="com.wip.model.RelationShipDomain">
         SELECT
@@ -71,6 +130,16 @@
           <include refid="BASE_TABLE"/> AS rs
         WHERE
           cid = #{cid, jdbcType=INTEGER}
+    </select>
+
+    <!--根据文章ID获取对应的标签或分类-->
+    <select id="getRelationShipByTid" resultType="com.wip.model.RelationShipDomain">
+        SELECT
+        <include refid="BASE_COLUMN_TUTO"/>
+        FROM
+        <include refid="BASE_TABLE_TUTO"/> AS rs1
+        WHERE
+        tid = #{tid, jdbcType=INTEGER}
     </select>
 
 </mapper>

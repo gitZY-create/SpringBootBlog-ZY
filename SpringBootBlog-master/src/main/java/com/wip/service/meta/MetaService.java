@@ -42,12 +42,30 @@ public interface MetaService {
     void saveOrUpdate(Integer cid, String name, String type);
 
     /**
+     * 添加或更新教程
+     * @param tid
+     * @param name
+     * @param type
+     */
+    void saveOrUpdateTutorial(Integer tid, String name, String type);
+
+    /**
      * 批量添加
      * @param cid
      * @param names
      * @param type
      */
     void addMetas(Integer cid, String names, String type);
+
+    /**
+     * 批量添加教程
+     * @param tid
+     * @param names
+     * @param type
+     */
+    void addMetasTutorial(Integer tid, String names, String type);
+
+
 
     /**
      * 删除项目

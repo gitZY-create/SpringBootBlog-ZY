@@ -111,6 +111,21 @@ public class MetaServiceImpl implements MetaService {
     }
 
     @Override
+    @Transactional
+    @CacheEvict(value = {"metaCaches","metaCache"}, allEntries = true, beforeInvocation = true)
+    public void addMetasTutorial(Integer tid, String names, String type) {
+        if (null == tid)
+            throw BusinessException.withErrorCode(ErrorConstant.Common.PARAM_IS_EMPTY);
+
+        if (StringUtils.isNotBlank(names) && StringUtils.isNotBlank(type)) {
+            String[] nameArr = StringUtils.split(names,",");
+            for (String name : nameArr) {
+                this.saveOrUpdateTutorial(tid,name,type);
+            }
+        }
+    }
+
+    @Override
     @CacheEvict(value = {"metaCaches","metaCache"}, allEntries = true,beforeInvocation = true)
     public void saveOrUpdate(Integer cid, String name, String type) {
         MetaCond metaCond = new MetaCond();
@@ -143,6 +158,40 @@ public class MetaServiceImpl implements MetaService {
             }
         }
 
+    }
+
+    @Override
+    @CacheEvict(value = {"metaCaches","metaCache"}, allEntries = true,beforeInvocation = true)
+    public void saveOrUpdateTutorial(Integer tid, String name, String type) {
+        MetaCond metaCond = new MetaCond();
+        metaCond.setName(name);
+        metaCond.setType(type);
+        List<MetaDomain> metas = this.getMetas(metaCond);
+
+        int mid;
+        MetaDomain metaDomain;
+        if (metas.size() == 1) {
+            MetaDomain meta = metas.get(0);
+            mid = meta.getMid();
+        } else if (metas.size() > 1) {
+            throw BusinessException.withErrorCode(ErrorConstant.Meta.NOT_ONE_RESULT);
+        } else {
+            metaDomain = new MetaDomain();
+            metaDomain.setSlug(name);
+            metaDomain.setName(name);
+            metaDomain.setType(type);
+            this.addMea(metaDomain);
+            mid = metaDomain.getMid();
+        }
+        if (mid != 0) {
+            Long count = relationShipDao.getCountByIdTuto(tid,mid);
+            if (count ==0) {
+                RelationShipDomain relationShip = new RelationShipDomain();
+                relationShip.setCid(tid);
+                relationShip.setMid(mid);
+                relationShipDao.addRelationShipTuto(relationShip);
+            }
+        }
     }
 
     @Override
