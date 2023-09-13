@@ -26,7 +26,7 @@
                             </thead>
                             <tbody>
                             <th:block th:each="post : ${tutorials.list}">
-                                <tr th:cid="${post.tid}">
+                                <tr th:tid="${post.tid}">
                                     <td>
                                         <a th:href="@{'/admin/tutorial/'+${post.tid}}" th:text="${post.title}"></a>
                                     </td>
@@ -65,7 +65,7 @@
 
                             </tbody>
                         </table>
-                        <div th:replace="comm/macros :: pageAdminNav(${articles})"></div>
+                        <div th:replace="comm/macros :: pageAdminNav(${tutorials})"></div>
                     </div>
                 </div>
                 <div th:replace="admin/fragments/footer :: footer-content"></div>

@@ -10,9 +10,7 @@ import com.wip.dao.RelationShipDao;
 import com.wip.dao.TutorialDao;
 import com.wip.dto.cond.ContentCond;
 import com.wip.exception.BusinessException;
-import com.wip.model.ContentDomain;
-import com.wip.model.MetaDomain;
-import com.wip.model.TutorialDomain;
+import com.wip.model.*;
 import com.wip.service.meta.MetaService;
 import com.wip.service.tutorial.TutorialService;
 import org.apache.commons.lang3.StringUtils;
@@ -107,22 +105,54 @@ public class TutorialServiceImpl implements TutorialService {
     }
 
     @Override
+    @Transactional
+    @CacheEvict(value = {"tutorialCache","tutorialCaches"},allEntries = true, beforeInvocation = true)
     public void deleteTutorialById(Integer tid) {
+        if (null == tid)
+            throw BusinessException.withErrorCode(ErrorConstant.Common.PARAM_IS_EMPTY);
+        // 删除文章
+        tutorialDao.deleteTutorialById(tid);
 
+        // 同时要删除该 文章下的所有评论
+        List<CommentDomain> comments = commentDao.getCommentByCId(tid);
+        if (null != comments && comments.size() > 0) {
+            comments.forEach(comment -> {
+                commentDao.deleteComment(comment.getCoid());
+            });
+        }
+
+        // 删除标签和分类关联
+        List<RelationShipDomain> relationShips = relationShipDao.getRelationShipByCid(tid);
+        if (null != relationShips && relationShips.size() > 0) {
+            relationShipDao.deleteRelationShipByCid(tid);
+        }
     }
 
     @Override
+    @CacheEvict(value = {"tutorialCache","tutorialCaches"}, allEntries = true, beforeInvocation = true)
     public void updateTutorialByTid(TutorialDomain tutorial) {
-
+        if (null != tutorial && null != tutorial.getTid()) {
+            tutorialDao.updateTutorialById(tutorial);
+        }
     }
 
     @Override
+    @Cacheable(value = "tutorialCache", key = "'tutorialByCategory_' + #p0")
     public List<TutorialDomain> getTutorialByCategory(String category) {
-        return null;
+        if (null == category)
+            throw BusinessException.withErrorCode(ErrorConstant.Common.PARAM_IS_EMPTY);
+        return tutorialDao.getTutorialByCategory(category);
     }
 
     @Override
+    @Cacheable(value = "tutorialCache", key = "'tutorialByTags_'+ #p0")
     public List<TutorialDomain> getTutorialByTags(MetaDomain tags) {
+        if (null == tags)
+            throw BusinessException.withErrorCode(ErrorConstant.Common.PARAM_IS_EMPTY);
+        List<RelationShipDomain> relationShip = relationShipDao.getRelationShipByMid(tags.getMid());
+        if (null != relationShip && relationShip.size() > 0) {
+            return tutorialDao.getTutorialByTags(relationShip);
+        }
         return null;
     }
 }
