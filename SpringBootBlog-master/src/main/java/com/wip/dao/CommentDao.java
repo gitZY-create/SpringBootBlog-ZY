@@ -25,11 +25,24 @@ public interface CommentDao {
     void addComment(CommentDomain comments);
 
     /**
+     * 添加教程评论
+     * @param comments
+     */
+    void addCommentTuto(CommentDomain comments);
+
+    /**
      * 根据文章ID获取评论
      * @param cid
      * @return
      */
     List<CommentDomain> getCommentByCId(@Param("cid") Integer cid);
+
+    /**
+     * 根据教程ID获取评论
+     * @param tid
+     * @return
+     */
+    List<CommentDomain> getCommentTutoByTId(@Param("tid") Integer tid);
 
 
     /**
@@ -39,10 +52,22 @@ public interface CommentDao {
     void deleteComment(@Param("coid") Integer coid);
 
     /**
+     * 删除教程评论
+     * @param coid
+     */
+    void deleteCommentTuto(@Param("coid") Integer coid);
+
+    /**
      * 获取评论总数
      * @return
      */
     Long getCommentCount();
+
+    /**
+     * 获取教程评论总数
+     * @return
+     */
+    Long getCommentCountTuto();
 
     /**
      * 根据条件获取评论列表
@@ -52,6 +77,13 @@ public interface CommentDao {
     List<CommentDomain> getCommentsByCond(CommentCond commentCond);
 
     /**
+     * 根据条件获取教程评论列表
+     * @param commentCond
+     * @return
+     */
+    List<CommentDomain> getCommentsTutoByCond(CommentCond commentCond);
+
+    /**
      * 通过ID获取评论
      * @param coid
      * @return
@@ -59,9 +91,23 @@ public interface CommentDao {
     CommentDomain getCommentById(@Param("coid") Integer coid);
 
     /**
+     * 通过ID获取教程评论
+     * @param coid
+     * @return
+     */
+    CommentDomain getCommentTutoById(@Param("coid") Integer coid);
+
+    /**
      * 更新评论状态
      * @param coid
      * @param status
      */
     void updateCommentStatus(@Param("coid") Integer coid, @Param("status") String status);
+
+    /**
+     * 更新教程评论状态
+     * @param coid
+     * @param status
+     */
+    void updateCommentStatusTuto(@Param("coid") Integer coid, @Param("status") String status);
 }

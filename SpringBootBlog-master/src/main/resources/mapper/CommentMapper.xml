@@ -12,6 +12,17 @@
         cm.url, cm.ip, cm.agent, cm.type, cm.status, cm.parent, cm.content
     </sql>
 
+    <!--教程表名-->
+    <sql id="BASE_TABLE_TUTO">
+        t_comments_tuto
+    </sql>
+    <!--教程表列名-->
+    <sql id="BASE_COLUMN_TUTO">
+        cm.coid, cm.tid, cm.created, cm.author, cm.authorId, cm.ownerId, cm.mail,
+        cm.url, cm.ip, cm.agent, cm.type, cm.status, cm.parent, cm.content
+    </sql>
+
+
     <!--添加评论-->
     <insert id="addComment" parameterType="com.wip.model.CommentDomain">
         INSERT INTO
@@ -36,6 +47,32 @@
             #{content, jdbcType=LONGVARCHAR}
         </trim>
     </insert>
+
+    <!--添加教程评论-->
+    <insert id="addCommentTuto" parameterType="com.wip.model.CommentDomain">
+        INSERT INTO
+        <include refid="BASE_TABLE_TUTO"/>
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            tid, created, author,authorId,ownerId,mail,
+            url, ip, agent, type, status, parent, content
+        </trim>
+        <trim prefix="VALUES(" suffix=")" suffixOverrides=",">
+            #{tid, jdbcType=INTEGER},
+            #{created, jdbcType=INTEGER},
+            #{author, jdbcType=VARCHAR},
+            #{authorId, jdbcType=INTEGER},
+            #{ownerId, jdbcType=INTEGER},
+            #{email, jdbcType=VARCHAR},
+            #{url, jdbcType=VARCHAR},
+            #{ip, jdbcType=VARCHAR},
+            #{agent, jdbcType=VARCHAR},
+            #{type, jdbcType=VARCHAR},
+            #{status, jdbcType=VARCHAR},
+            #{parent, jdbcType=INTEGER},
+            #{content, jdbcType=LONGVARCHAR}
+        </trim>
+    </insert>
+
     <!--根据文章ID获取评论-->
     <select id="getCommentByCId" resultType="com.wip.model.CommentDomain">
         SELECT
@@ -50,12 +87,34 @@
           cm.created
     </select>
 
+    <!--根据教程ID获取评论-->
+    <select id="getCommentTutoByTId" resultType="com.wip.model.CommentDomain">
+        SELECT
+        <include refid="BASE_COLUMN_TUTO"/>
+        FROM
+        <include refid="BASE_TABLE_TUTO"/> AS cm
+        WHERE
+        cm.tid = #{tid, jdbcType=INTEGER}
+        AND
+        cm.status = 'approved'
+        ORDER BY
+        cm.created
+    </select>
+
     <!--删除评论-->
     <delete id="deleteComment">
         DELETE FROM
           <include refid="BASE_TABLE"/>
         WHERE
           coid = #{coid, jdbcType=INTEGER}
+    </delete>
+
+    <!--删除教程评论-->
+    <delete id="deleteCommentTuto">
+        DELETE FROM
+        <include refid="BASE_TABLE_TUTO"/>
+        WHERE
+        coid = #{coid, jdbcType=INTEGER}
     </delete>
 
     <!--获取评论总数-->
@@ -66,12 +125,43 @@
           <include refid="BASE_TABLE"/>
     </select>
 
+    <!--获取教程评论总数-->
+    <select id="getCommentCountTuto" resultType="java.lang.Long">
+        SELECT
+        COUNT(*)
+        FROM
+        <include refid="BASE_TABLE_TUTO"/>
+    </select>
+
     <!--根据条件查找评论列表-->
     <select id="getCommentsByCond" resultType="com.wip.model.CommentDomain" parameterType="com.wip.dto.cond.CommentCond">
         SELECT
           <include refid="BASE_COLUMN"/>
         FROM
           <include refid="BASE_TABLE"/> AS cm
+        <where>
+            <if test="status != null">
+                AND cm.status = #{status, jdbcType=VARCHAR}
+            </if>
+            <if test="startTime != null">
+                AND cm.created &gt;= #{startTime, jdbcType=INTEGER}
+            </if>
+            <if test="endTime != null">
+                AND cm.created &lt;= #{endTime, jdbcType=INTEGER}
+            </if>
+            <if test="parent != null">
+                AND cm.parent = #{parent, jdbcType=INTEGER}
+            </if>
+        </where>
+        ORDER BY cm.created
+    </select>
+
+    <!--根据条件查找教程评论列表-->
+    <select id="getCommentsTutoByCond" resultType="com.wip.model.CommentDomain" parameterType="com.wip.dto.cond.CommentCond">
+        SELECT
+        <include refid="BASE_COLUMN_TUTO"/>
+        FROM
+        <include refid="BASE_TABLE_TUTO"/> AS cm
         <where>
             <if test="status != null">
                 AND cm.status = #{status, jdbcType=VARCHAR}
@@ -99,6 +189,16 @@
           cm.coid = #{coid, jdbcType=INTEGER}
     </select>
 
+    <!--通过ID获取教程评论-->
+    <select id="getCommentTutoById" resultType="com.wip.model.CommentDomain">
+        SELECT
+        <include refid="BASE_COLUMN_TUTO"/>
+        FROM
+        <include refid="BASE_TABLE_TUTO"/> AS cm
+        WHERE
+        cm.coid = #{coid, jdbcType=INTEGER}
+    </select>
+
     <!--更新评论状态-->
     <update id="updateCommentStatus">
         UPDATE
@@ -107,6 +207,16 @@
           status = #{status, jdbcType=VARCHAR}
         WHERE
           coid = #{coid, jdbcType=INTEGER}
+    </update>
+
+    <!--更新教程评论状态-->
+    <update id="updateCommentStatusTuto">
+        UPDATE
+        <include refid="BASE_TABLE_TUTO"/>
+        SET
+        status = #{status, jdbcType=VARCHAR}
+        WHERE
+        coid = #{coid, jdbcType=INTEGER}
     </update>
 
 

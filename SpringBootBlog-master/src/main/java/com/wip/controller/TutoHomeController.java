@@ -6,17 +6,16 @@ import com.wip.constant.ErrorConstant;
 import com.wip.constant.Types;
 import com.wip.constant.WebConst;
 import com.wip.dto.MetaDto;
-import com.wip.dto.StatisticsDto;
 import com.wip.dto.cond.ContentCond;
-import com.wip.dto.cond.MetaCond;
 import com.wip.exception.BusinessException;
 import com.wip.model.CommentDomain;
 import com.wip.model.ContentDomain;
 import com.wip.model.MetaDomain;
+import com.wip.model.TutorialDomain;
 import com.wip.service.article.ContentService;
 import com.wip.service.comment.CommentService;
 import com.wip.service.meta.MetaService;
-import com.wip.service.site.SiteService;
+import com.wip.service.tutorial.TutorialService;
 import com.wip.utils.APIResponse;
 import com.wip.utils.IPKit;
 import com.wip.utils.TaleUtils;
@@ -31,16 +30,15 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.net.URLEncoder;
 import java.util.List;
 
 @Api("博客前台页面")
 @Controller
-public class HomeController extends BaseController {
-
+@RequestMapping("/tutorial")
+public class TutoHomeController extends BaseController{
     @Autowired
-    private ContentService contentService;
+    private TutorialService tutorialService;
 
     @Autowired
     private CommentService commentService;
@@ -49,7 +47,7 @@ public class HomeController extends BaseController {
     private MetaService metaService;
 
 
-    @GetMapping(value = "/")
+    @GetMapping(value = "")
     public String index(
             HttpServletRequest request,
             @ApiParam(name = "page", value = "页数", required = false)
@@ -59,10 +57,9 @@ public class HomeController extends BaseController {
             @RequestParam(name = "limit", required = false, defaultValue = "5")
             int limit
     ) {
-        PageInfo<ContentDomain> articles = contentService.getArticlesByCond(new ContentCond(), page, limit);
-
-        request.setAttribute("articles",articles);
-        return "blog/home";
+        PageInfo<TutorialDomain> tutorials = tutorialService.getTutorialByCond(new ContentCond(),page,limit);
+        request.setAttribute("tutorials",tutorials);
+        return "blog/tutorial_home";
     }
 
     @ApiOperation("归档内容页")
@@ -76,8 +73,8 @@ public class HomeController extends BaseController {
             @RequestParam(name = "limit", required = false, defaultValue = "10")
             int limit
     ) {
-        PageInfo<ContentDomain> articles = contentService.getArticlesByCond(new ContentCond(), page, limit);
-        request.setAttribute("articles", articles);
+        PageInfo<TutorialDomain> tutorials = tutorialService.getTutorialByCond(new ContentCond(),page,limit);
+        request.setAttribute("tutorials",tutorials);
         return "blog/archives";
     }
 
@@ -85,7 +82,7 @@ public class HomeController extends BaseController {
     @GetMapping(value = "/categories")
     public String categories(HttpServletRequest request) {
         // 获取分类
-        List<MetaDto> categories = metaService.getMetaList(Types.CATEGORY.getType(),null,WebConst.MAX_POSTS);
+        List<MetaDto> categories = metaService.getMetaList(Types.CATEGORY.getType(),null, WebConst.MAX_POSTS);
         // 分类总数
         Long categoryCount = metaService.getMetasCountByType(Types.CATEGORY.getType());
         request.setAttribute("categories", categories);
@@ -104,9 +101,9 @@ public class HomeController extends BaseController {
         MetaDomain category = metaService.getMetaByName(Types.CATEGORY.getType(),name);
         if (null == category.getName())
             throw BusinessException.withErrorCode(ErrorConstant.Common.PARAM_IS_EMPTY);
-        List<ContentDomain> articles = contentService.getArticleByCategory(category.getName());
+        List<TutorialDomain> tutorials = tutorialService.getTutorialByCategory(category.getName());
         request.setAttribute("category", category.getName());
-        request.setAttribute("articles", articles);
+        request.setAttribute("tutorials", tutorials);
         return "blog/category_detail";
     }
 
@@ -131,8 +128,8 @@ public class HomeController extends BaseController {
             String name
     ) {
         MetaDomain tags = metaService.getMetaByName(Types.TAG.getType(),name);
-        List<ContentDomain> articles = contentService.getArticleByTags(tags);
-        request.setAttribute("articles",articles);
+        List<TutorialDomain> tutorials = tutorialService.getTutorialByTags(tags);
+        request.setAttribute("tutorials",tutorials);
         request.setAttribute("tags",tags.getName());
         return "blog/tags_detail";
     }
@@ -142,45 +139,45 @@ public class HomeController extends BaseController {
         return "blog/about";
     }
 
-    @ApiOperation("文章内容页")
-    @GetMapping(value = "/detail/{cid}")
+    @ApiOperation("教程内容页")
+    @GetMapping(value = "/tutorial_detail/{tid}")
     public String detail(
-            @ApiParam(name = "cid", value = "文章主键", required = true)
-            @PathVariable("cid")
-            Integer cid,
+            @ApiParam(name = "tid", value = "教程主键", required = true)
+            @PathVariable("tid")
+            Integer tid,
             HttpServletRequest request
     ) {
-        ContentDomain article = contentService.getArticleById(cid);
-        request.setAttribute("article", article);
+        TutorialDomain tutorial = tutorialService.getTutorialById(tid);
+        request.setAttribute("tutorial", tutorial);
 
         // 更新文章的点击量
-        this.updateArticleHits(article.getCid(),article.getHits());
+        this.updateTutorialHits(tutorial.getTid(),tutorial.getHits());
         // 获取评论
-        List<CommentDomain> comments = commentService.getCommentsByCId(cid);
+        List<CommentDomain> comments = commentService.getCommentsTutoByTId(tid);
         request.setAttribute("comments", comments);
 
-        return "blog/detail";
+        return "blog/tutorial_detail";
     }
 
     /**
      * 更新文章的点击率
-     * @param cid
+     * @param tid
      * @param chits
      */
-    private void updateArticleHits(Integer cid, Integer chits) {
-        Integer hits = cache.hget("article", "hits");
+    private void updateTutorialHits(Integer tid, Integer chits) {
+        Integer hits = cache.hget("tutorial", "hits");
         if (chits == null) {
             chits = 0;
         }
         hits = null == hits ? 1 : hits + 1;
         if (hits >= WebConst.HIT_EXEED) {
-            ContentDomain temp = new ContentDomain();
-            temp.setCid(cid);
+            TutorialDomain temp = new TutorialDomain();
+            temp.setTid(tid);
             temp.setHits(chits + hits);
-            contentService.updateContentByCid(temp);
-            cache.hset("article", "hits", 1);
+            tutorialService.updateTutorialByTid(temp);
+            cache.hset("tutorial", "hits", 1);
         } else {
-            cache.hset("article", "hits", hits);
+            cache.hset("tutorial", "hits", hits);
         }
 
     }
@@ -188,92 +185,6 @@ public class HomeController extends BaseController {
     @PostMapping(value = "/comment")
     @ResponseBody
     public APIResponse comment(HttpServletRequest request, HttpServletResponse response,
-                               @RequestParam(name = "cid", required = true) Integer cid,
-                               @RequestParam(name = "coid", required = false) Integer coid,
-                               @RequestParam(name = "author", required = false) String author,
-                               @RequestParam(name = "email", required = false) String email,
-                               @RequestParam(name = "url", required = false) String url,
-                               @RequestParam(name = "content", required = true) String content,
-                               @RequestParam(name = "csrf_token", required = true) String csrf_token
-                               ) {
-
-        String ref = request.getHeader("Referer");
-        if (StringUtils.isBlank(ref) || StringUtils.isBlank(csrf_token)){
-            return APIResponse.fail("访问失败");
-        }
-
-        String token = cache.hget(Types.CSRF_TOKEN.getType(), csrf_token);
-        if (StringUtils.isBlank(token)) {
-            return APIResponse.fail("访问失败");
-        }
-
-        if (null == cid || StringUtils.isBlank(content)) {
-            return APIResponse.fail("请输入完整后评论");
-        }
-
-        if (StringUtils.isNotBlank(author) && author.length() > 50) {
-            return APIResponse.fail("姓名过长");
-        }
-
-        if (StringUtils.isNotBlank(email) && !TaleUtils.isEmail(email)) {
-            return APIResponse.fail("请输入正确的邮箱格式");
-        }
-
-        if (StringUtils.isNotBlank(url) && !TaleUtils.isURL(url)) {
-            return APIResponse.fail("请输入正确的网址格式");
-        }
-
-        if (content.length() > 200) {
-            return APIResponse.fail("请输入200个字符以内的评价");
-        }
-
-        if (content.length() < 5) {
-            return APIResponse.fail("请输入5个字符以上的评价");
-        }
-
-        String val = IPKit.getIpAddressByRequest1(request) + ":" + cid;
-        Integer count = cache.hget(Types.COMMENTS_FREQUENCY.getType(), val);
-        if (null != count && count > 0) {
-            return APIResponse.fail("您发表的评论太快了，请过会再试");
-        }
-
-        author = TaleUtils.cleanXSS(author);
-        content = TaleUtils.cleanXSS(content);
-
-        author = EmojiParser.parseToAliases(author);
-        content = EmojiParser.parseToAliases(content);
-
-
-        CommentDomain comments = new CommentDomain();
-        comments.setAuthor(author);
-        comments.setCid(cid);
-        comments.setIp(request.getRemoteAddr());
-        comments.setUrl(url);
-        comments.setContent(content);
-        comments.setEmail(email);
-        comments.setParent(coid);
-
-        try {
-            commentService.addComment(comments);
-            cookie("tale_remember_author", URLEncoder.encode(author,"UTF-8"), 7 * 24 * 60 * 60, response);
-            cookie("tale_remember_mail", URLEncoder.encode(email,"UTF-8"), 7 * 24 * 60 * 60, response);
-            if (StringUtils.isNotBlank(url)) {
-                cookie("tale_remember_url",URLEncoder.encode(url,"UTF-8"),7 * 24 * 60 * 60, response);
-            }
-            // 设置对每个文章1分钟可以评论一次
-            cache.hset(Types.COMMENTS_FREQUENCY.getType(),val,1,60);
-
-            return APIResponse.success();
-
-        } catch (Exception e) {
-            throw BusinessException.withErrorCode(ErrorConstant.Comment.ADD_NEW_COMMENT_FAIL);
-        }
-
-    }
-
-    @PostMapping(value = "/commentTuto")
-    @ResponseBody
-    public APIResponse commentTuto(HttpServletRequest request, HttpServletResponse response,
                                @RequestParam(name = "tid", required = true) Integer tid,
                                @RequestParam(name = "coid", required = false) Integer coid,
                                @RequestParam(name = "author", required = false) String author,
@@ -363,6 +274,4 @@ public class HomeController extends BaseController {
         cookie.setSecure(false);
         response.addCookie(cookie);
     }
-
-
 }

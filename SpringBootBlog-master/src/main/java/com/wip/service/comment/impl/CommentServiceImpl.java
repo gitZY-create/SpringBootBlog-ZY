@@ -13,8 +13,10 @@ import com.wip.dto.cond.CommentCond;
 import com.wip.exception.BusinessException;
 import com.wip.model.CommentDomain;
 import com.wip.model.ContentDomain;
+import com.wip.model.TutorialDomain;
 import com.wip.service.article.ContentService;
 import com.wip.service.comment.CommentService;
+import com.wip.service.tutorial.TutorialService;
 import com.wip.utils.DateKit;
 import com.wip.utils.TaleUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -36,6 +38,9 @@ public class CommentServiceImpl implements CommentService {
 
     @Autowired
     private ContentService contentService;
+
+    @Autowired
+    private TutorialService tutorialService;
 
     private static final Map<String,String> STATUS_MAP = new ConcurrentHashMap<>();
 
@@ -104,11 +109,67 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional
+    @CacheEvict(value = "commentCache", allEntries = true)
+    public void addCommentTuto(CommentDomain comments) {
+        String msg = null;
+
+        if (null == comments) {
+            msg = "评论对象为空";
+        }
+
+        if (StringUtils.isBlank(comments.getAuthor())) {
+            comments.setAuthor("热心网友");
+        }
+        if (StringUtils.isNotBlank(comments.getEmail()) && !TaleUtils.isEmail(comments.getEmail())) {
+            msg =  "请输入正确的邮箱格式";
+        }
+        if (StringUtils.isBlank(comments.getContent())) {
+            msg = "评论内容不能为空";
+        }
+        if (comments.getContent().length() < 5 || comments.getContent().length() > 2000) {
+            msg = "评论字数在5-2000个字符";
+        }
+        if (null == comments.getCid()) {
+            msg = "评论教程不能为空";
+        }
+        if (msg != null)
+            throw BusinessException.withErrorCode(msg);
+
+        TutorialDomain tutorial = tutorialService.getTutorialById(comments.getCid());
+        if (null == tutorial) {
+            throw BusinessException.withErrorCode("该教程不存在");
+        }
+
+        comments.setOwnerId(tutorial.getAuthorId());
+        comments.setStatus(STATUS_MAP.get(STATUS_BLANK));
+        comments.setCreated(DateKit.getCurrentUnixTime());
+        commentDao.addComment(comments);
+
+        TutorialDomain temp = new TutorialDomain();
+        temp.setTid(temp.getTid());
+        Integer count = tutorial.getCommentsNum();
+        if (null == count) {
+            count = 0;
+        }
+        temp.setCommentsNum(count + 1);
+        tutorialService.updateTutorialByTid(temp);
+    }
+
+    @Override
     @Cacheable(value = "commentCache", key = "'commentsByCId_' + #p0")
     public List<CommentDomain> getCommentsByCId(Integer cid) {
         if (null == cid)
             throw BusinessException.withErrorCode(ErrorConstant.Common.PARAM_IS_EMPTY);
         return commentDao.getCommentByCId(cid);
+    }
+
+    @Override
+    @Cacheable(value = "commentCache", key = "'commentsTutoByTId_' + #p0")
+    public List<CommentDomain> getCommentsTutoByTId(Integer tid) {
+        if (null == tid)
+            throw BusinessException.withErrorCode(ErrorConstant.Common.PARAM_IS_EMPTY);
+        return commentDao.getCommentTutoByTId(tid);
     }
 
     @Override
@@ -123,11 +184,30 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Cacheable(value = "commentCache", key = "'commentsTutoByCond_'+ #p1")
+    public PageInfo<CommentDomain> getCommentsTutoByCond(CommentCond commentCond, int pageNum, int pageSize) {
+        if (null == commentCond)
+            throw BusinessException.withErrorCode(ErrorConstant.Common.PARAM_IS_EMPTY);
+        PageHelper.startPage(pageNum,pageSize);
+        List<CommentDomain> comments = commentDao.getCommentsTutoByCond(commentCond);
+        PageInfo<CommentDomain> pageInfo = new PageInfo<>(comments);
+        return pageInfo;
+    }
+
+    @Override
     @Cacheable(value = "commentCache",key = "'commentById_' + #p0")
     public CommentDomain getCommentById(Integer coid) {
         if (null == coid)
             throw BusinessException.withErrorCode(ErrorConstant.Common.PARAM_IS_EMPTY);
         return commentDao.getCommentById(coid);
+    }
+
+    @Override
+    @Cacheable(value = "commentCache",key = "'commentTutoById_' + #p0")
+    public CommentDomain getCommentTutoById(Integer coid) {
+        if (null == coid)
+            throw BusinessException.withErrorCode(ErrorConstant.Common.PARAM_IS_EMPTY);
+        return commentDao.getCommentTutoById(coid);
     }
 
     @Override
@@ -139,9 +219,24 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @CacheEvict(value = "commentCache", allEntries = true)
+    public void updateCommentStatusTuto(Integer coid, String status) {
+        if (null == coid)
+            throw BusinessException.withErrorCode(ErrorConstant.Common.PARAM_IS_EMPTY);
+        commentDao.updateCommentStatusTuto(coid,status);
+    }
+
+    @Override
     public void deleteComment(Integer coid) {
         if (null == coid)
             throw BusinessException.withErrorCode(ErrorConstant.Common.PARAM_IS_EMPTY);
         commentDao.deleteComment(coid);
+    }
+
+    @Override
+    public void deleteCommentTuto(Integer id) {
+        if (null == id)
+            throw BusinessException.withErrorCode(ErrorConstant.Common.PARAM_IS_EMPTY);
+        commentDao.deleteCommentTuto(id);
     }
 }

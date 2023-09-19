@@ -122,9 +122,9 @@ public class TutorialServiceImpl implements TutorialService {
         }
 
         // 删除标签和分类关联
-        List<RelationShipDomain> relationShips = relationShipDao.getRelationShipByCid(tid);
+        List<RelationShipDomain> relationShips = relationShipDao.getRelationShipByTid(tid);
         if (null != relationShips && relationShips.size() > 0) {
-            relationShipDao.deleteRelationShipByCid(tid);
+            relationShipDao.deleteRelationShipByTid(tid);
         }
     }
 

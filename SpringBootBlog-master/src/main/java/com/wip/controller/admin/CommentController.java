@@ -47,6 +47,25 @@ public class CommentController extends BaseController {
         return "admin/comment_list";
     }
 
+    @ApiOperation("进入教程评论列表页")
+    @GetMapping(value = "/indexTuto")
+    public String indexTuto(
+            @ApiParam(name = "page", value = "页数", required = false)
+            @RequestParam(name = "page", required = false, defaultValue = "1")
+            int page,
+            @ApiParam(name = "limit", value = "每页条数", required = false)
+            @RequestParam(name = "limit", required = false, defaultValue = "15")
+            int limit,
+            HttpServletRequest request
+
+    ) {
+        UserDomain user = this.user(request);
+        PageInfo<CommentDomain> comments = commentService.getCommentsTutoByCond(new CommentCond(),page,limit);
+        request.setAttribute("comments", comments);
+        return "admin/comment_list";
+    }
+
+
     @ApiOperation("审核评论")
     @PostMapping(value = "/status")
     @ResponseBody
@@ -73,6 +92,35 @@ public class CommentController extends BaseController {
         }
         return APIResponse.success();
     }
+
+    @ApiOperation("审核教程评论")
+    @PostMapping(value = "/statusTuto")
+    @ResponseBody
+    public APIResponse changeStatusTuto(
+            HttpServletRequest request,
+            @ApiParam(name = "coid", value = "评论主键", required = true)
+            @RequestParam(name = "coid", required = true)
+            Integer coid,
+            @ApiParam(name = "status", value = "状态", required = true)
+            @RequestParam(name = "status", required = true)
+            String status
+    ) {
+        try {
+            CommentDomain comment = commentService.getCommentTutoById(coid);
+            if (null != comment) {
+                commentService.updateCommentStatusTuto(coid,status);
+            } else {
+                return APIResponse.fail("通过失败");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            LOGGER.error(e.getMessage());
+            return APIResponse.fail(e.getMessage());
+        }
+        return APIResponse.success();
+    }
+
+
     @ApiOperation("删除评论")
     @PostMapping(value = "/delete")
     @ResponseBody
@@ -96,4 +144,29 @@ public class CommentController extends BaseController {
         }
         return APIResponse.success();
     }
+
+    @ApiOperation("删除教程评论")
+    @PostMapping(value = "/deleteTuto")
+    @ResponseBody
+    public APIResponse deleteStatusTuto(
+            HttpServletRequest request,
+            @ApiParam(name = "coid", value = "评论主键", required = true)
+            @RequestParam(name = "coid", required = true)
+            Integer coid
+    ) {
+        try {
+            CommentDomain comment = commentService.getCommentTutoById(coid);
+            if (null != comment) {
+                commentService.deleteCommentTuto(coid);
+            } else {
+                return APIResponse.fail("通过失败");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            LOGGER.error(e.getMessage());
+            return APIResponse.fail(e.getMessage());
+        }
+        return APIResponse.success();
+    }
+
 }
